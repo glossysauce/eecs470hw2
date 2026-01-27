@@ -6,9 +6,24 @@ NOP_BLOCKS = 8 # controls size of each function
 
 with open("icache_funcs.c", "w") as f:
     f.write('#include <stdint.h>\n#include <stddef.h>\n\n')
-    f.write('#define DO_8_NOPS  asm volatile("nop\\n"*8);\n')
-    f.write('#define DO_64_NOPS DO_8_NOPS DO_8_NOPS DO_8_NOPS DO_8_NOPS '
-            'DO_8_NOPS DO_8_NOPS DO_8_NOPS DO_8_NOPS\n\n')
+
+    f.write(
+        '#define DO_8_NOPS \\\n'
+        '  asm volatile("nop\\n'
+        'nop\\n'
+        'nop\\n'
+        'nop\\n'
+        'nop\\n'
+        'nop\\n'
+        'nop\\n'
+        'nop\\n");\n\n'
+    )
+
+    f.write(
+        '#define DO_64_NOPS \\\n'
+        '  DO_8_NOPS DO_8_NOPS DO_8_NOPS DO_8_NOPS \\\n'
+        '  DO_8_NOPS DO_8_NOPS DO_8_NOPS DO_8_NOPS\n\n'
+    )
 
     for i in range(N_FUNCS):
         f.write(f'__attribute__((noinline)) void f{i}(volatile uint64_t *s) {{\n')
