@@ -5,6 +5,11 @@
 #include <string.h>
 #include <time.h>
 
+typedef struct __attribute__((aligned(64))) {
+    uint32_t next;
+    uint8_t pad[64 - sizeof(uint32_t)];
+} Node;
+
 static inline uint64_t ns_now(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
@@ -24,14 +29,14 @@ static void shuffle_u32(uint32_t *a, size_t n, uint32_t *seed) {
     }
 }
 
-static double bench_pointer_chase(uint32_t *next, size_t steps) {
+static double bench_pointer_chase(Node *next, size_t steps) {
     volatile uint32_t idx = 0;
 
     //warm-up
-    for (size_t i = 0; i < steps; i++) idx = next[idx];
+    for (size_t i = 0; i < steps; i++) idx = next[idx].next;
 
     uint64_t t0 = ns_now();
-    for (size_t i = 0; i < steps; i++) idx = next[idx];
+    for (size_t i = 0; i < steps; i++) idx = next[idx].next;
     uint64_t t1 = ns_now();
 
     if (idx == 0xdeadbeef) fprintf(stderr, "keep\n");
@@ -52,8 +57,8 @@ int main(void) {
         size_t nodes = bytes / line;
         if (nodes < 2) nodes = 2;
 
-        uint32_t *next = NULL;
-        if (posix_memalign((void**)&next, 64, nodes * sizeof(uint32_t)) != 0) {
+        Node *next = NULL;
+        if (posix_memalign((void**)&next, 64, nodes * sizeof(Node)) != 0) {
             perror("posix_memalign");
             return 1;
         }
@@ -64,8 +69,8 @@ int main(void) {
         }
         for (size_t i = 0; i < nodes; i++) perm[i] = (uint32_t)i;
         shuffle_u32(perm, nodes, &seed);
-        for (size_t i = 0; i + 1 < nodes; i++) next[perm[i]] = perm[i + 1];
-        next[perm[nodes - 1]] = perm[0];
+        for (size_t i = 0; i + 1 < nodes; i++) next[perm[i]].next = perm[i + 1];
+        next[perm[nodes - 1]].next = perm[0];
 
         size_t steps = nodes * 200;
         if (steps < 5 * 1000 * 1000) steps = 5 * 1000 * 1000;

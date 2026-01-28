@@ -1,5 +1,5 @@
 # gen_icache.py
-# Generates many "fat" functions to probe I-cache size
+# generates many big functions to probe icache size
 
 N_FUNCS = 1024  # number of functions
 NOP_BLOCKS = 8 # controls size of each function
@@ -37,3 +37,4 @@ with open("icache_funcs.c", "w") as f:
     f.write('};\n')
 
     f.write(f'const size_t ALL_N = {N_FUNCS};\n')
+    
